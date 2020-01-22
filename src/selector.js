@@ -2,43 +2,44 @@
  * @namespace selector
  */
 
-import { createSelector } from 'reselect'
-import { denormalize } from './helper'
+import { createSelector } from "reselect";
+import { denormalize } from "./helper";
 import {
   ACTIONS_REDUCER_NAME,
   ENTITIES_REDUCER_NAME,
   IS_TEST_ENVIRONMENT
-} from './config'
+} from "./config";
 
 const defaultActionDataOutput = {
-  status: '',
-  time: '',
-  hasError: '',
-  errorText: '',
-  isFetching: false
-}
+  status: "",
+  time: "",
+  hasError: "",
+  errorText: "",
+  isFetching: false,
+  backendResponse: null
+};
 
 const deepCopy = obj => {
-  return JSON.parse(JSON.stringify(obj))
-}
+  return JSON.parse(JSON.stringify(obj));
+};
 
 const makeDefaultActionData = () => {
-  return deepCopy(defaultActionDataOutput)
-}
+  return deepCopy(defaultActionDataOutput);
+};
 
 const getPayloadIds = (dataKey, isArray, actionState, stateKey) => {
   if (!dataKey) {
-    return undefined
+    return undefined;
   }
 
-  const payloadIds = actionState.get(stateKey || dataKey)
+  const payloadIds = actionState.get(stateKey || dataKey);
 
   if (!payloadIds) {
-    return undefined
+    return undefined;
   }
 
-  return isArray ? payloadIds : [payloadIds]
-}
+  return isArray ? payloadIds : [payloadIds];
+};
 
 const makeActionDenormalizedPayload = (
   isArray,
@@ -47,14 +48,14 @@ const makeActionDenormalizedPayload = (
   entities
 ) => {
   if (!payloadIds) {
-    return undefined
+    return undefined;
   }
 
   const result = denormalize(payloadIds, [schema], entities)
     .filter(v => v)
-    .map(item => item.toJS())
-  return isArray ? result : result[0]
-}
+    .map(item => item.toJS());
+  return isArray ? result : result[0];
+};
 
 const makeActionDenormalizedPayloads = (
   isFetching,
@@ -66,27 +67,27 @@ const makeActionDenormalizedPayloads = (
   actionState
 ) => {
   if (!actionDataKey) {
-    return {}
+    return {};
   }
 
   if (!entityState) {
     return {
       payload: payloadIsArray ? [] : undefined,
       prevPayload: payloadIsArray ? [] : undefined
-    }
+    };
   }
 
   const actionPayloadIds = getPayloadIds(
     actionDataKey,
     payloadIsArray,
     actionState
-  )
+  );
   const actionPrevPayloadIds = getPayloadIds(
     actionDataKey,
     payloadIsArray,
     actionState,
     `prev${actionDataKey}`
-  )
+  );
 
   return {
     payload: makeActionDenormalizedPayload(
@@ -101,8 +102,8 @@ const makeActionDenormalizedPayloads = (
       actionSchema,
       entities
     )
-  }
-}
+  };
+};
 
 const _makeGetActionData = (action, actionId, entityName, actionSchema) => {
   return createSelector(
@@ -113,23 +114,24 @@ const _makeGetActionData = (action, actionId, entityName, actionSchema) => {
     ],
     (actionState, entityState, entities) => {
       if (!actionState) {
-        return makeDefaultActionData()
+        return makeDefaultActionData();
       }
 
-      const payloadIsArray = actionState.get('isArrayData')
-      const dataKey = actionState.get('actionDataKey')
-      const isFetching = actionState.get('status') === 'pending'
+      const payloadIsArray = actionState.get("isArrayData");
+      const dataKey = actionState.get("actionDataKey");
+      const isFetching = actionState.get("status") === "pending";
 
       return Object.assign(
         makeDefaultActionData(),
         {
           actionId,
-          sourceResult: actionState.get('sourceResult'),
-          status: actionState.get('status'),
-          time: actionState.get('time'),
-          hasError: actionState.get('hasError'),
-          errorText: actionState.get('errorText'),
-          isFetching: actionState.get('isFetching')
+          sourceResult: actionState.get("sourceResult"),
+          status: actionState.get("status"),
+          time: actionState.get("time"),
+          hasError: actionState.get("hasError"),
+          errorText: actionState.get("errorText"),
+          isFetching: actionState.get("isFetching"),
+          backendResponse: actionState.get("backendResponse")
         },
         makeActionDenormalizedPayloads(
           isFetching,
@@ -140,15 +142,15 @@ const _makeGetActionData = (action, actionId, entityName, actionSchema) => {
           entityState,
           actionState
         )
-      )
+      );
     }
-  )
-}
+  );
+};
 
 export const getActionData = action => {
-  const actionId = action.actionId()
-  const entityName = action.getEntityName()
-  const actionEntitySchema = action.getSchema()
+  const actionId = action.actionId();
+  const entityName = action.getEntityName();
+  const actionEntitySchema = action.getSchema();
 
   return (state, props) => {
     const selectorGetActionData = _makeGetActionData(
@@ -156,51 +158,52 @@ export const getActionData = action => {
       actionId,
       entityName,
       actionEntitySchema
-    )
-    return selectorGetActionData(state, props)
-  }
-}
+    );
+
+    return selectorGetActionData(state, props);
+  };
+};
 
 export const getMergedActionsData = (...actions) => {
   return createSelector(
     actions.map(action => getActionData(action)),
     (...actionsData) => {
-      const sortedByUpate = actionsData.sort((a, b) => a.time - b.time)
+      const sortedByUpate = actionsData.sort((a, b) => a.time - b.time);
 
       return sortedByUpate.reduce((memo, item) => {
-        return Object.assign(memo, item)
-      })
+        return Object.assign(memo, item);
+      });
     }
-  )
-}
+  );
+};
 
-export const getActionsReducer = state => state[ACTIONS_REDUCER_NAME]
+export const getActionsReducer = state => state[ACTIONS_REDUCER_NAME];
 
-export const getEntityReducer = state => state[ENTITIES_REDUCER_NAME]
+export const getEntityReducer = state => state[ENTITIES_REDUCER_NAME];
 
 export const getEntityItemsBySchema = entitySchema => {
   return createSelector([getEntityReducer], entities => {
-    return entities.get(entitySchema.key)
-  })
-}
+    return entities.get(entitySchema.key);
+  });
+};
 
 export const getEntityItemsByAction = action => {
   return createSelector([getEntityReducer], entities => {
-    return entities.get(action.getEntityName())
-  })
-}
+    return entities.get(action.getEntityName());
+  });
+};
 
 export const getEntityItemsByEntityName = name => {
   return createSelector([getEntityReducer], entities => {
-    return entities.get(name)
-  })
-}
+    return entities.get(name);
+  });
+};
 
 export const denomalizeEntityItemById = (id, schema, entities) => {
-  return denormalize(id, schema, entities)
-}
+  return denormalize(id, schema, entities);
+};
 
 if (IS_TEST_ENVIRONMENT) {
-  module.exports.defaultActionDataOutput = defaultActionDataOutput
-  module.exports._makeGetActionData = _makeGetActionData
+  module.exports.defaultActionDataOutput = defaultActionDataOutput;
+  module.exports._makeGetActionData = _makeGetActionData;
 }

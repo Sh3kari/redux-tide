@@ -2,33 +2,35 @@
  * @namespace reducer
  */
 
-import { fromJS } from 'immutable'
-import { normalize } from 'normalizr'
+import { fromJS } from "immutable";
+import { normalize } from "normalizr";
 
 import {
   ACTION_EMPTY_TYPE_NAME,
   ACTION_TYPE_PREFIX,
   ACTIONS_REDUCER_NAME,
   ENTITIES_REDUCER_NAME
-} from './config'
+} from "./config";
 
 const defaultEmptyActionData = {
   array: [],
-  notArray: ''
-}
+  notArray: ""
+};
 
 const actionDefaultData = {
   isFetching: false,
   hasError: false,
-  errorText: '',
-  status: '',
-  time: ''
-}
+  errorText: "",
+  status: "",
+  time: "",
+  backendResponse: null
+};
 
 const makeActionsReducer = defaultActionsState => {
   return (state = defaultActionsState, action) => {
+    console.log("[");
     if (!action.prefix || action.prefix !== ACTION_TYPE_PREFIX) {
-      return state
+      return state;
     }
 
     const {
@@ -42,29 +44,32 @@ const makeActionsReducer = defaultActionsState => {
       hasError,
       isArrayData,
       actionDataKey,
-      actionSchema
-    } = action
+      actionSchema,
+      backendResponse
+    } = action;
 
-    const entityKey = actionSchema.key
+    console.log("MMMMMMMMM", defaultActionsState, action);
+
+    const entityKey = actionSchema.key;
 
     // action.clear
     if (action.type === ACTION_EMPTY_TYPE_NAME) {
       return state.set(
         actionId,
         fromJS(Object.assign({ entityKey }, actionDefaultData, { time }))
-      )
+      );
     }
 
     const emptyData = actionDataKey
-      ? defaultEmptyActionData[isArrayData ? 'array' : 'notArray']
-      : undefined
+      ? defaultEmptyActionData[isArrayData ? "array" : "notArray"]
+      : undefined;
 
-    let actionState = state.get(actionId)
+    let actionState = state.get(actionId);
 
     // when action state is not defined need set new value
     if (!actionState) {
-      state = state.set(actionId, fromJS(actionDefaultData))
-      actionState = state.get(actionId)
+      state = state.set(actionId, fromJS(actionDefaultData));
+      actionState = state.get(actionId);
     }
 
     actionState = actionState.merge({
@@ -74,27 +79,28 @@ const makeActionsReducer = defaultActionsState => {
       errorText,
       isFetching,
       isArrayData,
-      actionDataKey
-    })
+      actionDataKey,
+      backendResponse
+    });
 
     if (actionDataKey) {
       actionState = actionState.set(
         `prev${actionDataKey}`,
         actionState.get(actionDataKey, emptyData)
-      )
+      );
     }
 
     if (sourceResult) {
-      actionState = actionState.set('sourceResult', sourceResult)
+      actionState = actionState.set("sourceResult", sourceResult);
     }
 
     if (!hasError && actionDataKey && payload) {
-      actionState = actionState.set(actionDataKey, payload, {})
+      actionState = actionState.set(actionDataKey, payload, {});
     }
 
-    return state.set(actionId, actionState)
-  }
-}
+    return state.set(actionId, actionState);
+  };
+};
 
 const makeNormalizedPayloadSource = (
   actionSchema,
@@ -104,16 +110,18 @@ const makeNormalizedPayloadSource = (
   hasError
 ) => {
   if (payloadSource && !hasError && !isFetching) {
-    const normalizeData = isArrayData ? payloadSource : [payloadSource]
-    return normalize(normalizeData, [actionSchema])
+    const normalizeData = isArrayData ? payloadSource : [payloadSource];
+    return normalize(normalizeData, [actionSchema]);
   }
-  return undefined
-}
+  return undefined;
+};
 
 const makeEntitiesReducer = defaultEntitiesState => {
   return function(state = defaultEntitiesState, action) {
+    console.log("]");
+
     if (!action.prefix || action.prefix !== ACTION_TYPE_PREFIX) {
-      return state
+      return state;
     }
 
     const {
@@ -122,7 +130,9 @@ const makeEntitiesReducer = defaultEntitiesState => {
       isArrayData,
       payloadSource,
       actionSchema
-    } = action
+    } = action;
+
+    console.log("NNNNN", action);
 
     const normalizedPayloadSource = makeNormalizedPayloadSource(
       actionSchema,
@@ -130,31 +140,31 @@ const makeEntitiesReducer = defaultEntitiesState => {
       isArrayData,
       isFetching,
       hasError
-    )
+    );
 
     const newEntitiesItems = normalizedPayloadSource
       ? normalizedPayloadSource.entities
-      : {}
+      : {};
 
     // merge entity item data
     for (let entityName in newEntitiesItems) {
       for (let entityId in newEntitiesItems[entityName]) {
-        let prevEntityState = state.getIn([entityName, entityId])
-        let nextEntityState = fromJS(newEntitiesItems[entityName][entityId])
+        let prevEntityState = state.getIn([entityName, entityId]);
+        let nextEntityState = fromJS(newEntitiesItems[entityName][entityId]);
 
         if (!prevEntityState) {
-          state = state.setIn([entityName, entityId], nextEntityState)
-          continue
+          state = state.setIn([entityName, entityId], nextEntityState);
+          continue;
         }
 
-        state = state.mergeIn([entityName, entityId], nextEntityState)
+        state = state.mergeIn([entityName, entityId], nextEntityState);
       }
     }
 
     // todo add isFetching attribute in entity item
-    return state
-  }
-}
+    return state;
+  };
+};
 /**
  * This function returns object with actions reducer and entities reducer
  *
@@ -182,17 +192,17 @@ const makeEntitiesReducer = defaultEntitiesState => {
  */
 export const createReducers = (...appSchema) => {
   // default state for actions
-  const defaultActionsState = fromJS({})
+  const defaultActionsState = fromJS({});
 
   // default state for entities
   const defaultEntitiesState = fromJS(
     appSchema.reduce((memo, item) => {
-      memo[item.key] = {}
-      return memo
+      memo[item.key] = {};
+      return memo;
     }, {})
-  )
+  );
   return {
     [ACTIONS_REDUCER_NAME]: makeActionsReducer(defaultActionsState),
     [ENTITIES_REDUCER_NAME]: makeEntitiesReducer(defaultEntitiesState)
-  }
-}
+  };
+};
