@@ -10,8 +10,8 @@ import {
   ACTION_TYPE_PREFIX,
   IS_TEST_ENVIRONMENT,
   STATUSES
-} from './config'
-import { getDefaultResponseMapper, parseError, uniqPrefix } from './helper'
+} from "./config";
+import { getDefaultResponseMapper, parseError, uniqPrefix } from "./helper";
 
 /**
  * Created uniq prefix for action type
@@ -23,25 +23,25 @@ import { getDefaultResponseMapper, parseError, uniqPrefix } from './helper'
  * @private
  */
 const makeActionUniqId = name => {
-  return `${ACTION_TYPE_PREFIX} ${name} ${uniqPrefix}`
-}
+  return `${ACTION_TYPE_PREFIX} ${name} ${uniqPrefix}`;
+};
 
 const getHandlerErrorText = (isFetching, error, payloadSource) => {
   if (!isFetching && error) {
-    return error
+    return error;
   }
   if (!isFetching && payloadSource === undefined) {
-    return 'Empty Data'
+    return "Empty Data";
   }
-  return error || ''
-}
+  return error || "";
+};
 
 const getHandlerActionDataKey = (isFetching, hasError, payloadSource) => {
   if (!isFetching && !hasError) {
-    return Array.isArray(payloadSource) ? ACTION_IDS_KEY : ACTION_ID_KEY
+    return Array.isArray(payloadSource) ? ACTION_IDS_KEY : ACTION_ID_KEY;
   }
-  return undefined
-}
+  return undefined;
+};
 
 const getHandlerPayload = (
   Action,
@@ -53,10 +53,10 @@ const getHandlerPayload = (
   if (payloadSource && !isFetching && !hasError) {
     return isArrayData
       ? payloadSource.map(item => Action.getEntityId(item))
-      : Action.getEntityId(payloadSource)
+      : Action.getEntityId(payloadSource);
   }
-  return undefined
-}
+  return undefined;
+};
 /**
  * Make action handler wrapper
  *
@@ -83,33 +83,36 @@ const makeActionHandler = (
    * @param {Object|Array} payloadSource - response from action result
    * @returns {Object} - action dispatch body
    */
-  return function(error, payloadSource, sourceResult) {
-    if (status === 'success' && payloadSource === undefined) {
-      error = 'Empty payload'
-      status = 'error'
+  return function(error, payloadSource, sourceResult, response) {
+    if (status === "success" && payloadSource === undefined) {
+      error = "Empty payload";
+      status = "error";
     }
 
     // flag data in progress (all actions is async)
-    const isFetching = status === 'pending'
+    const isFetching = status === "pending";
 
     // error message text
-    const errorText = getHandlerErrorText(isFetching, error, payloadSource)
+    const errorText = getHandlerErrorText(isFetching, error, payloadSource);
+
+    // backend response
+    const backendResponse = response;
 
     // flag
-    const hasError = Boolean(errorText)
+    const hasError = Boolean(errorText);
 
     // id key, ids or id dispatch({...action.data.id}) or dispatch({...action.data.ids})
     const actionDataKey = getHandlerActionDataKey(
       isFetching,
       hasError,
       payloadSource
-    )
+    );
 
     // action flag response data is array or not
-    const isArrayData = actionDataKey === ACTION_IDS_KEY
+    const isArrayData = actionDataKey === ACTION_IDS_KEY;
 
     // action property entity (actionSchema id attribute) name
-    const entityName = actionSchema.key
+    const entityName = actionSchema.key;
 
     // list of ids or id from payload
     const payload = getHandlerPayload(
@@ -118,7 +121,7 @@ const makeActionHandler = (
       hasError,
       isArrayData,
       payloadSource
-    )
+    );
 
     /**
      * @type {{
@@ -137,6 +140,7 @@ const makeActionHandler = (
      * actionSchema: Object,
      * payload: Number|Array,
      * payloadSource: Object|Array
+     * backendResponse: Object
      * }}
      */
     return Object.freeze({
@@ -155,80 +159,81 @@ const makeActionHandler = (
       actionSchema,
       sourceResult,
       payload,
-      payloadSource
-    })
-  }
-}
+      payloadSource,
+      backendResponse
+    });
+  };
+};
 
 const makeResultCallback = (responseMapper, success, error) => {
   return function(dispatch, getState, err, result) {
     try {
-      const errorMessage = parseError(err)
+      const errorMessage = parseError(err);
 
       if (errorMessage) {
-        return dispatch(error(errorMessage, undefined))
+        return dispatch(error(errorMessage, undefined, undefined, err));
       }
 
-      dispatch(success(undefined, responseMapper(result), result))
+      dispatch(success(undefined, responseMapper(result), result));
     } catch (e) {
-      dispatch(error(String(`${e.message || e}`), undefined))
-      throw e
+      dispatch(error(String(`${e.message || e}`), undefined));
+      throw e;
     }
-  }
-}
+  };
+};
 
 const makeQueryBuilder = (level, dispatch, getState, args, method) => {
-  const nextLevel = level + 1
-  const nullLevelArgs = level === 0 ? args : [dispatch, getState]
+  const nextLevel = level + 1;
+  const nullLevelArgs = level === 0 ? args : [dispatch, getState];
 
   if (method instanceof Promise) {
     return method
       .apply(this, nullLevelArgs)
       .then(resp => {
-        makeQueryBuilder(nextLevel, dispatch, getState, args, resp)
+        makeQueryBuilder(nextLevel, dispatch, getState, args, resp);
       })
       .catch(err => {
-        throw err
-      })
+        throw err;
+      });
   }
 
-  if (typeof method === 'function') {
-    const result = method.apply(this, nullLevelArgs)
-    return makeQueryBuilder(nextLevel, dispatch, getState, args, result)
+  if (typeof method === "function") {
+    const result = method.apply(this, nullLevelArgs);
+    return makeQueryBuilder(nextLevel, dispatch, getState, args, result);
   }
 
-  return method
-}
+  return method;
+};
 
 const makeCallActionMethod = resultCallBack => {
   return (actionMethod, args, dispatch, getState) => {
-    args = Array.isArray(args) ? args : [args]
+    args = Array.isArray(args) ? args : [args];
 
-    let actionResult = actionMethod.apply(this, args)
+    let actionResult = actionMethod.apply(this, args);
 
     if (actionResult instanceof Promise) {
       return actionResult
         .then(resp => resultCallBack(dispatch, getState, false, resp))
-        .catch(err => resultCallBack(dispatch, getState, err, undefined))
+        .catch(err => resultCallBack(dispatch, getState, err, undefined));
     }
 
-    if (typeof actionResult === 'function') {
-      actionResult = actionResult.call(this, dispatch, getState)
+    if (typeof actionResult === "function") {
+      actionResult = actionResult.call(this, dispatch, getState);
 
       if (!actionResult) {
-        return resultCallBack(dispatch, getState, undefined, undefined)
+        return resultCallBack(dispatch, getState, undefined, undefined);
       }
 
       if (actionResult instanceof Promise) {
         return actionResult
           .then(resp => resultCallBack(dispatch, getState, false, resp))
-          .catch(err => resultCallBack(dispatch, getState, err, undefined))
+          .catch(err => resultCallBack(dispatch, getState, err, undefined));
       }
     }
 
-    return resultCallBack(dispatch, getState, false, actionResult)
-  }
-}
+    return resultCallBack(dispatch, getState, false, actionResult);
+  };
+};
 
 const actionCopyWrapper = (
   Action,
@@ -238,14 +243,14 @@ const actionCopyWrapper = (
   responseMapper
 ) => {
   return newActionId => {
-    newActionId = newActionId.toString().trim()
+    newActionId = newActionId.toString().trim();
 
     if (!newActionId) {
-      throw new Error('Action id must be not empty')
+      throw new Error("Action id must be not empty");
     }
 
-    const parentActionId = Action.actionId()
-    const nextActionId = [parentActionId, `${newActionId}`].join(' ')
+    const parentActionId = Action.actionId();
+    const nextActionId = [parentActionId, `${newActionId}`].join(" ");
 
     return makeAction.apply({}, [
       nextActionId,
@@ -254,9 +259,9 @@ const actionCopyWrapper = (
       actionMethod,
       queryBuilder,
       responseMapper
-    ])
-  }
-}
+    ]);
+  };
+};
 
 /**
  * Create new action
@@ -289,15 +294,15 @@ const makeAction = function(
    * @returns {Function}
    * @constructor
    */
-  this.actionId = actionId
-  this.parentActionId = parentActionId
-  this.schema = actionSchema
-  this.method = actionMethod
-  this.queryBuilder = queryBuilder
-  this.responseMapper = responseMapper
+  this.actionId = actionId;
+  this.parentActionId = parentActionId;
+  this.schema = actionSchema;
+  this.method = actionMethod;
+  this.queryBuilder = queryBuilder;
+  this.responseMapper = responseMapper;
 
   this.action = (...args) => {
-    this.responseMapper = responseMapper || getDefaultResponseMapper()
+    this.responseMapper = responseMapper || getDefaultResponseMapper();
 
     const [pending, success, error] = STATUSES.map(statusName =>
       makeActionHandler(
@@ -307,23 +312,23 @@ const makeAction = function(
         statusName,
         actionSchema
       )
-    )
+    );
 
     const resultCallBack = makeResultCallback(
       this.responseMapper,
       success,
       error
-    )
-    const callActionMethod = makeCallActionMethod(resultCallBack)
+    );
+    const callActionMethod = makeCallActionMethod(resultCallBack);
 
     // action body
     return (dispatch, getState) => {
-      dispatch(pending())
+      dispatch(pending());
 
       try {
         const compiledActionArgs = queryBuilder
           ? makeQueryBuilder(0, dispatch, getState, args, queryBuilder)
-          : args
+          : args;
 
         if (compiledActionArgs instanceof Promise) {
           return compiledActionArgs
@@ -331,16 +336,16 @@ const makeAction = function(
               callActionMethod(actionMethod, resp, dispatch, getState)
             )
             .catch(err => {
-              throw err
-            })
+              throw err;
+            });
         }
 
-        callActionMethod(actionMethod, compiledActionArgs, dispatch, getState)
+        callActionMethod(actionMethod, compiledActionArgs, dispatch, getState);
       } catch (e) {
-        resultCallBack(dispatch, getState, e, undefined)
+        resultCallBack(dispatch, getState, e, undefined);
       }
-    }
-  }
+    };
+  };
 
   /**
    * @memberOf action.makeAction.Action
@@ -348,8 +353,8 @@ const makeAction = function(
    * @returns {Function} - returns action id
    */
   this.action.type = this.action.actionId = this.action.toString = this.action.valueOf = () => {
-    return this.actionId
-  }
+    return this.actionId;
+  };
 
   /**
    * @memberOf action.makeAction.Action
@@ -359,8 +364,8 @@ const makeAction = function(
    * @returns {Function} - returns id from source
    */
   this.action.getEntityId = item => {
-    return this.schema.getId(item)
-  }
+    return this.schema.getId(item);
+  };
 
   /**
    * @memberOf action.makeAction.Action
@@ -368,8 +373,8 @@ const makeAction = function(
    * @returns {Object} - returns actionSchema of action
    */
   this.action.getSchema = () => {
-    return this.schema
-  }
+    return this.schema;
+  };
 
   /**
    * @memberOf action.makeAction.Action
@@ -377,8 +382,8 @@ const makeAction = function(
    * @returns {Function} - returns entity uniq name (id)
    */
   this.action.getEntityName = () => {
-    return this.schema.key
-  }
+    return this.schema.key;
+  };
 
   /**
    * @memberOf action.makeAction.Action
@@ -391,8 +396,8 @@ const makeAction = function(
       this.method,
       this.queryBuilder,
       this.responseMapper
-    )
-  }
+    );
+  };
 
   /**
    * @memberOf action.makeAction.Action
@@ -406,8 +411,8 @@ const makeAction = function(
       this.method,
       this.queryBuilder,
       this.responseMapper
-    )(prefix.join('-'))
-  }
+    )(prefix.join("-"));
+  };
 
   /**
    * @memberOf action.makeAction.Action
@@ -421,8 +426,8 @@ const makeAction = function(
       this.method,
       this.queryBuilder,
       this.responseMapper
-    )(name)
-  }
+    )(name);
+  };
 
   /**
    * Clear action store data
@@ -443,9 +448,9 @@ const makeAction = function(
         prefix: ACTION_TYPE_PREFIX,
         actionId: this.actionId,
         actionSchema: this.schema
-      })
-    }
-  }
+      });
+    };
+  };
 
   // /**
   //  * Clean entity from entity reducer
@@ -470,8 +475,8 @@ const makeAction = function(
   //   }
   // }
 
-  return this.action
-}
+  return this.action;
+};
 
 /**
  * Action creator
@@ -531,29 +536,29 @@ export const createAction = (
   responseMapper
 ) => {
   if (!actionSchema) {
-    throw 'actionSchema argument is required, must be normalizr actionSchema'
+    throw "actionSchema argument is required, must be normalizr actionSchema";
   }
   if (!actionMethod) {
-    throw 'actionMethod argument is required, must be promise or function'
+    throw "actionMethod argument is required, must be promise or function";
   }
-  if (responseMapper && typeof responseMapper !== 'function') {
-    throw 'responseMapper must be function'
+  if (responseMapper && typeof responseMapper !== "function") {
+    throw "responseMapper must be function";
   }
 
-  const actionId = makeActionUniqId(actionSchema.key)
+  const actionId = makeActionUniqId(actionSchema.key);
 
   return makeAction.apply({}, [
     actionId,
-    '',
+    "",
     actionSchema,
     actionMethod,
     queryBuilder,
     responseMapper
-  ])
-}
+  ]);
+};
 
 if (IS_TEST_ENVIRONMENT) {
-  module.exports.makeActionUniqId = makeActionUniqId
-  module.exports.makeActionHandler = makeActionHandler
-  module.exports.makeAction = makeAction
+  module.exports.makeActionUniqId = makeActionUniqId;
+  module.exports.makeActionHandler = makeActionHandler;
+  module.exports.makeAction = makeAction;
 }

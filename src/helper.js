@@ -2,40 +2,40 @@
  * @namespace helper
  */
 
-const config = require('./config')
+const config = require("./config");
 
-let START_UNIQ_PREFIX = 0
+let START_UNIQ_PREFIX = 0;
 
 export const uniqPrefix = (() => {
-  const uniq = () => {}
+  const uniq = () => {};
   uniq.toString = uniq.valueOf = () => {
-    START_UNIQ_PREFIX += 1
-    return `uniq${START_UNIQ_PREFIX}`
-  }
-  return uniq
-})()
+    START_UNIQ_PREFIX += 1;
+    return `uniq${START_UNIQ_PREFIX}`;
+  };
+  return uniq;
+})();
 
 export const parseError = err => {
-  const typeOfError = typeof err
+  const typeOfError = typeof err;
 
-  if (err === false || typeOfError === 'undefined') {
-    return false
+  if (err === false || typeOfError === "undefined") {
+    return false;
   }
-  if (typeOfError === 'string') {
-    return err
+  if (typeOfError === "string") {
+    return err;
   }
   if (err instanceof Error) {
     if (err.stack && !config.IS_TEST_ENVIRONMENT) {
-      console.error(err)
+      console.error(err);
     }
-    return err.message || err.toString()
+    return err.message || err.toString();
   }
-  return `Error: ${String(err)}`
-}
+  return `Error: ${String(err)}`;
+};
 
 export const denormalize = (input, schema, entities) => {
-  return config.setDenormalize.denormalize(input, schema, entities)
-}
+  return config.setDenormalize.denormalize(input, schema, entities);
+};
 
 /**
  * Action success response default mapper
@@ -48,9 +48,9 @@ export const denormalize = (input, schema, entities) => {
  * @private
  */
 const _defaultResponseMapper = resp => {
-  return resp
-}
+  return resp;
+};
 
 export const getDefaultResponseMapper = () => {
-  return config.setDefaultResponseMapper.callback || _defaultResponseMapper
-}
+  return config.setDefaultResponseMapper.callback || _defaultResponseMapper;
+};

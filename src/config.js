@@ -7,7 +7,7 @@
  * @memberOf config
  * @type {Boolean}
  */
-export const IS_TEST_ENVIRONMENT = process.env.NODE_ENV === 'test'
+export const IS_TEST_ENVIRONMENT = process.env.NODE_ENV === "test";
 
 /**
  * Default action statuses
@@ -15,7 +15,7 @@ export const IS_TEST_ENVIRONMENT = process.env.NODE_ENV === 'test'
  * @memberOf config
  * @type {Array}
  */
-export const STATUSES = ['pending', 'success', 'error']
+export const STATUSES = ["pending", "success", "error"];
 
 /**
  * Key action data for single entity
@@ -24,7 +24,7 @@ export const STATUSES = ['pending', 'success', 'error']
  * @const
  * @type {String}
  */
-export const ACTION_ID_KEY = 'id'
+export const ACTION_ID_KEY = "id";
 
 /**
  * Key action data for array entity
@@ -33,7 +33,7 @@ export const ACTION_ID_KEY = 'id'
  * @const
  * @type {String}
  */
-export const ACTION_IDS_KEY = 'ids'
+export const ACTION_IDS_KEY = "ids";
 
 /**
  * Plugin action types prefix
@@ -42,7 +42,7 @@ export const ACTION_IDS_KEY = 'ids'
  * @const
  * @type {String}
  */
-export const ACTION_TYPE_PREFIX = '@@tide'
+export const ACTION_TYPE_PREFIX = "@@tide";
 
 /**
  * Redux store actions reducer name
@@ -51,7 +51,7 @@ export const ACTION_TYPE_PREFIX = '@@tide'
  * @const
  * @type {String}
  */
-export const ACTIONS_REDUCER_NAME = `${ACTION_TYPE_PREFIX}-actions`
+export const ACTIONS_REDUCER_NAME = `${ACTION_TYPE_PREFIX}-actions`;
 
 /**
  * Redux store entities reducer name
@@ -60,7 +60,7 @@ export const ACTIONS_REDUCER_NAME = `${ACTION_TYPE_PREFIX}-actions`
  * @const
  * @type {String}
  */
-export const ENTITIES_REDUCER_NAME = `${ACTION_TYPE_PREFIX}-entities`
+export const ENTITIES_REDUCER_NAME = `${ACTION_TYPE_PREFIX}-entities`;
 
 /**
  * Action type name for clear action data
@@ -69,7 +69,7 @@ export const ENTITIES_REDUCER_NAME = `${ACTION_TYPE_PREFIX}-entities`
  * @const
  * @type {String}
  */
-export const ACTION_EMPTY_TYPE_NAME = `${ACTION_TYPE_PREFIX}-empty`
+export const ACTION_EMPTY_TYPE_NAME = `${ACTION_TYPE_PREFIX}-empty`;
 
 /**
  * Action type name for clear entity data from entity reducer
@@ -78,7 +78,7 @@ export const ACTION_EMPTY_TYPE_NAME = `${ACTION_TYPE_PREFIX}-empty`
  * @const
  * @type {String}
  */
-export const ACTION_CLEAN_TYPE_NAME = `${ACTION_TYPE_PREFIX}-clean`
+export const ACTION_CLEAN_TYPE_NAME = `${ACTION_TYPE_PREFIX}-clean`;
 
 /**
  * replaced default response mapper to callback
@@ -98,13 +98,13 @@ export const ACTION_CLEAN_TYPE_NAME = `${ACTION_TYPE_PREFIX}-clean`
  *
  */
 export const setDefaultResponseMapper = callback => {
-  setDefaultResponseMapper.callback = callback
-}
+  setDefaultResponseMapper.callback = callback;
+};
 
 export const setDenormalize = denormalize => {
-  setDenormalize.denormalize = denormalize
-}
+  setDenormalize.denormalize = denormalize;
+};
 
 if (IS_TEST_ENVIRONMENT) {
-  setDenormalize(require('normalizr').denormalize)
+  setDenormalize(require("normalizr").denormalize);
 }
