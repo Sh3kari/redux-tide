@@ -28,7 +28,6 @@ const actionDefaultData = {
 
 const makeActionsReducer = defaultActionsState => {
   return (state = defaultActionsState, action) => {
-    console.log("[");
     if (!action.prefix || action.prefix !== ACTION_TYPE_PREFIX) {
       return state;
     }
@@ -47,8 +46,6 @@ const makeActionsReducer = defaultActionsState => {
       actionSchema,
       backendResponse
     } = action;
-
-    console.log("MMMMMMMMM", defaultActionsState, action);
 
     const entityKey = actionSchema.key;
 
@@ -118,8 +115,6 @@ const makeNormalizedPayloadSource = (
 
 const makeEntitiesReducer = defaultEntitiesState => {
   return function(state = defaultEntitiesState, action) {
-    console.log("]");
-
     if (!action.prefix || action.prefix !== ACTION_TYPE_PREFIX) {
       return state;
     }
@@ -131,8 +126,6 @@ const makeEntitiesReducer = defaultEntitiesState => {
       payloadSource,
       actionSchema
     } = action;
-
-    console.log("NNNNN", action);
 
     const normalizedPayloadSource = makeNormalizedPayloadSource(
       actionSchema,
